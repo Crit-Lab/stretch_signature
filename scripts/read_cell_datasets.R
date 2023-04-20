@@ -1,16 +1,16 @@
-#############################################################################
-####################### ONLY read cell datasets #############################
 
-#Read datasets with gene expression in stretched cells
-
+library(limma)
 library(MetaIntegrator)
 library(COCONUT)
+library(oligo)
 
-#GSE59128
-library(limma)
-x<-read.ilmn("C:/Users/cecil/Desktop/Crit lab/proyectos/2019 firma stretch/Stretch signature/raw data/cells/coding/GSE59128_RAW/GSE59128_non-normalized.txt", probeid = "PROBE_ID") #Leer datos de expresión de Illumina y archivos de perfil de sonda de control 
-x<-x[,c(1:60)] #Removing experiments in differentiated cells without mechanical stretch
-y<-neqc(x) # Realiza la corrección de fondo (background) seguida de la NORMALIZACIÓN por cuantiles, utilizando sondas de control negativo para la corrección de fondos y positivos para la normalización (nec() es similar pero no normaliza)
+# Read datasets with gene expression in stretched cells #############
+
+## GSE59128 ----
+
+x<-read.ilmn("C:/Users/cecil/Desktop/Crit lab/proyectos/2019 firma stretch/Stretch signature/raw data/cells/coding/GSE59128_RAW/GSE59128_non-normalized.txt", probeid = "PROBE_ID") 
+x<-x[,c(1:60)] 
+y<-neqc(x) 
 expr<-as.matrix(y)
 
 class<-c(rep(0,12), rep(1,28), rep(0,12), rep(1,8)) #¿De dónde se obtienen estos valores??
@@ -40,7 +40,7 @@ checkDataObject(dataObj1, "Dataset")
 boxplot(dataObj1$expr)
 
 
-#GSE16650
+## GSE16650 ----
 
 files<-list.celfiles(path="C:/Users/cecil/Desktop/Crit lab/proyectos/2019 firma stretch/Stretch signature/raw data/cells/coding/GSE16650_RAW",
                      listGzipped = TRUE,
@@ -73,12 +73,11 @@ dataObj2<-list(class=class,
                pheno=pheno,
                formattedName=formattedName)
 
-checkDataObject(dataObj2, "Dataset") ##OJO!!
+checkDataObject(dataObj2, "Dataset") 
 boxplot(dataObj2$expr)
 
-#GSE34789 and GSE27128 (Both Calu-3, same group)
 
-library(oligo)  #Ojo cuidao con funciones superpuestas (limma::backgroundCorrect)
+## GSE34789 and GSE27128 (Both Calu-3, same group) ----
 
 files1<-list.celfiles(path="C:/Users/cecil/Desktop/Crit lab/proyectos/2019 firma stretch/Stretch signature/raw data/cells/coding/GSE34789_RAW",
                       listGzipped = TRUE,
@@ -98,8 +97,6 @@ names(class)<-files
 expr<-exprs(eset)
 colnames(expr)<-files
 
-#Annotations from the previous dataset (same platform)
-
 keys<-annotations$Gene.Symbol[match(rownames(expr), annotations$Probe.Set.ID)]
 names(keys)<-rownames(expr)
 
@@ -118,7 +115,8 @@ dataObj3<-list(class=class,
 checkDataObject(dataObj3, "Dataset")
 boxplot(dataObj3$expr)
 
-#GSE1541
+
+## GSE1541 ----
 
 files<-list.celfiles(path="C:/Users/cecil/Desktop/Crit lab/proyectos/2019 firma stretch/Stretch signature/raw data/cells/coding/GSE1541_RAW",
                      listGzipped = TRUE,
@@ -155,7 +153,7 @@ checkDataObject(dataObj4, "Dataset")
 boxplot(dataObj4$expr)
 
 
-#GSE3541
+## GSE3541 ----
 
 files<-list.celfiles(path="C:/Users/cecil/Desktop/Crit lab/proyectos/2019 firma stretch/Stretch signature/raw data/cells/coding/GSE3541_RAW",
                      listGzipped = TRUE,
@@ -191,10 +189,10 @@ dataObj5<-list(class=class,
 checkDataObject(dataObj5, "Dataset")
 boxplot(dataObj5$expr)
 
-###################### Metaintegrator & COCONUT ################################
 
+# Metaintegrator & COCONUT ################################
 
-#### Metaintegrator ####
+## Metaintegrator ----
 
 discovery_datasets<-list(dataObj1, dataObj2, dataObj3, dataObj4, dataObj5)
 names(discovery_datasets) = c(dataObj1$formattedName, 
@@ -208,7 +206,7 @@ MetaObj_genes_cells$originalData <- discovery_datasets
 checkDataObject(MetaObj_genes_cells, "Meta", "Pre-Analysis")
 
 
-#### COCONUT ####
+## COCONUT ----
 
 coconut_genes_cells<-coconutMetaIntegrator(MetaObj_genes_cells)
 coco_out_genes_cells<-combineCOCOoutput(coconut_genes_cells)

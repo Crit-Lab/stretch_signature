@@ -1,11 +1,19 @@
-#Load datasets from animal experiments
 
+library(oligo)
+library(mogene20sttranscriptcluster.db)
+library(mogene10sttranscriptcluster.db)
+library(mouse430a2.db)
+library(GEOquery)
+library(m20kcod.db)
+library(mgu74av2.db)
+library(rgu34a.db)
 library(MetaIntegrator)
 library(COCONUT)
 
-#GSE121550
+# Load datasets from animal experiments ####
 
-library(oligo)  #Ojo cuidao con funciones superpuestas (limma::backgroundCorrect)
+## GSE121550 ----
+
 files<-list.celfiles(path="C:/Users/cecil/Desktop/Crit lab/proyectos/2019 firma stretch/Stretch signature/raw data/animals/coding/GSE121550_RAW",
                      listGzipped = TRUE,
                      full.names=TRUE)
@@ -21,8 +29,6 @@ names(class)<-files
 expr<-exprs(eset)
 colnames(expr)<-files
 
-#BiocManager::install("mogene20sttranscriptcluster.db")
-library(mogene20sttranscriptcluster.db)
 annotations<-data.frame(SYMBOL=sapply(contents(mogene20sttranscriptclusterSYMBOL), paste, collapse=","), 
                         DESC=sapply(contents(mogene20sttranscriptclusterGENENAME), paste, collapse=","),
                         ENTREZID=sapply(contents(mogene20sttranscriptclusterENTREZID), paste, collapse=","),
@@ -48,8 +54,8 @@ checkDataObject(dataObj1, "Dataset")
 boxplot(dataObj1$expr)
 
 
+## GSE85269 ----
 
-#GSE85269
 files<-list.celfiles(path="C:/Users/cecil/Desktop/Crit lab/proyectos/2019 firma stretch/Stretch signature/raw data/animals/coding/GSE85269_RAW",
                      listGzipped = TRUE,
                      full.names=TRUE)
@@ -85,7 +91,7 @@ checkDataObject(dataObj2, "Dataset")
 boxplot(dataObj2$expr)
 
 
-#GSE18341
+## GSE18341 ----
 
 files<-list.celfiles(path="C:/Users/cecil/Desktop/Crit lab/proyectos/2019 firma stretch/Stretch signature/raw data/animals/coding/GSE18341_RAW",
                      listGzipped = TRUE,
@@ -103,7 +109,6 @@ expr<-exprs(eset)
 colnames(expr)<-files
 
 annotations<-read.csv("C:/Users/cecil/Desktop/Crit lab/proyectos/2019 firma stretch/Stretch signature/raw data/animals/coding/GSE18341_RAW/Mouse430_2.na36.annot.csv", skip=22, stringsAsFactors = FALSE)
-
 
 keys<-annotations$Gene.Symbol[match(rownames(expr), annotations$Probe.Set.ID)]
 names(keys)<-rownames(expr)
@@ -124,7 +129,8 @@ checkDataObject(dataObj3, "Dataset")
 boxplot(dataObj3$expr)
 
 
-#GSE11434
+## GSE11434 ----
+
 files<-list.celfiles(path="C:/Users/cecil/Desktop/Crit lab/proyectos/2019 firma stretch/Stretch signature/raw data/animals/coding/GSE11434_RAW",
                      listGzipped = TRUE,
                      full.names=TRUE)
@@ -159,7 +165,7 @@ checkDataObject(dataObj4, "Dataset")
 boxplot(dataObj4$expr)
 
 
-#GSE9368
+## GSE9368 ----
 
 files<-list.celfiles(path="C:/Users/cecil/Desktop/Crit lab/proyectos/2019 firma stretch/Stretch signature/raw data/animals/coding/GSE9368_RAW",
                      listGzipped = TRUE,
@@ -195,7 +201,8 @@ dataObj5<-list(class=class,
 checkDataObject(dataObj5, "Dataset")
 boxplot(dataObj5$expr)
 
-#GSE9314
+
+## GSE9314 ----
 
 files<-list.celfiles(path="C:/Users/cecil/Desktop/Crit lab/proyectos/2019 firma stretch/Stretch signature/raw data/animals/coding/GSE9314_RAW",
                      listGzipped = TRUE,
@@ -231,7 +238,8 @@ dataObj6<-list(class=class,
 checkDataObject(dataObj6, "Dataset")
 boxplot(dataObj6$expr)
 
-#GSE86229
+
+## GSE86229 ----
 
 files<-list.celfiles(path="C:/Users/cecil/Desktop/Crit lab/proyectos/2019 firma stretch/Stretch signature/raw data/animals/coding/GSE86229_RAW",
                      listGzipped = TRUE,
@@ -249,8 +257,6 @@ names(class)<-files
 expr<-exprs(eset)
 colnames(expr)<-files
 
-#BiocManager::install("mogene10sttranscriptcluster.db")
-library(mogene10sttranscriptcluster.db)
 annotations<-data.frame(SYMBOL=sapply(contents(mogene10sttranscriptclusterSYMBOL), paste, collapse=","), 
                         DESC=sapply(contents(mogene10sttranscriptclusterGENENAME), paste, collapse=","),
                         ENTREZID=sapply(contents(mogene10sttranscriptclusterENTREZID), paste, collapse=","),
@@ -258,7 +264,6 @@ annotations<-data.frame(SYMBOL=sapply(contents(mogene10sttranscriptclusterSYMBOL
 
 keys<-as.character(annotations$SYMBOL[match(rownames(expr), rownames(annotations))])
 names(keys)<-rownames(expr)
-
 
 pheno<-data.frame(disease=class, stretch=stretch, second_hit=second_hit, vt=vt)
 rownames(pheno)<-files
@@ -275,7 +280,7 @@ dataObj7<-list(class=class,
 checkDataObject(dataObj7, "Dataset")
 boxplot(dataObj7$expr)
 
-#GSE31678
+## GSE31678 ----
 
 files<-list.celfiles(path="C:/Users/cecil/Desktop/Crit lab/proyectos/2019 firma stretch/Stretch signature/raw data/animals/coding/GSE31678_RAW",
                      listGzipped = TRUE,
@@ -315,7 +320,7 @@ checkDataObject(dataObj8, "Dataset")
 boxplot(dataObj8$expr)
 
 
-#GSE7041
+## GSE7041 ----
 
 files<-list.celfiles(path="C:/Users/cecil/Desktop/Crit lab/proyectos/2019 firma stretch/Stretch signature/raw data/animals/coding/GSE7041_RAW",
                      listGzipped = TRUE,
@@ -352,7 +357,8 @@ dataObj9<-list(class=class,
 checkDataObject(dataObj8, "Dataset")
 boxplot(dataObj9$expr)
 
-#GSE9208
+
+## GSE9208 ----
 
 files<-list.celfiles(path="C:/Users/cecil/Desktop/Crit lab/proyectos/2019 firma stretch/Stretch signature/raw data/animals/coding/GSE9208_RAW",
                      listGzipped = TRUE,
@@ -371,7 +377,7 @@ expr<-exprs(eset)
 colnames(expr)<-files
 
 #BiocManager::install("mouse430a2.db")
-library(mouse430a2.db)
+
 annotations<-data.frame(SYMBOL=sapply(contents(mouse430a2SYMBOL), paste, collapse=","), 
                         DESC=sapply(contents(mouse430a2GENENAME), paste, collapse=","),
                         ENTREZID=sapply(contents(mouse430a2ENTREZID), paste, collapse=","),
@@ -379,7 +385,6 @@ annotations<-data.frame(SYMBOL=sapply(contents(mouse430a2SYMBOL), paste, collaps
 
 keys<-as.character(annotations$SYMBOL[match(rownames(expr), rownames(annotations))])
 names(keys)<-rownames(expr)
-
 
 pheno<-data.frame(disease=class, stretch=stretch, second_hit=second_hit, vt=vt)
 rownames(pheno)<-files
@@ -397,9 +402,7 @@ checkDataObject(dataObj10, "Dataset")
 boxplot(dataObj10$expr)
 
 
-#GSE7742
-
-library(GEOquery)
+## GSE7742 ----
 
 codset<-getGEO("GSE7742", destdir = "C:/Users/cecil/Desktop/Crit lab/proyectos/2019 firma stretch/Stretch signature/raw data/animals/coding/GSE7742_RAW")
 eset<-codset[[1]]
@@ -417,8 +420,6 @@ colnames(expr)<-eset@phenoData@data$geo_accession
 
 expr<-expr[!is.na(rownames(expr)),]
 
-#BiocManager::install("m20kcod.db")
-library(m20kcod.db)
 annotations<-data.frame(SYMBOL=sapply(contents(m20kcodSYMBOL), paste, collapse=","), 
                         DESC=sapply(contents(m20kcodGENENAME), paste, collapse=","),
                         ENTREZID=sapply(contents(m20kcodENTREZID), paste, collapse=","),
@@ -443,7 +444,8 @@ dataObj11<-list(class=class,
 checkDataObject(dataObj11, "Dataset")
 boxplot(dataObj11$expr)
 
-#GSE2411
+
+## GSE2411 ----
 
 affyset<-getGEO("GSE2411", destdir = "C:/Users/cecil/Desktop/Crit lab/proyectos/2019 firma stretch/Stretch signature/raw data/animals/coding/GSE2411_RAW")
 eset<-affyset[[1]]
@@ -460,10 +462,8 @@ colnames(expr)<-rownames(eset@phenoData@data)
 keys<-eset@featureData@data$`Gene Symbol`
 names(keys)<-rownames(expr)
 
-
 pheno<-data.frame(disease=class, stretch=stretch, second_hit=second_hit, vt=vt)
 rownames(pheno)<-rownames(eset@phenoData@data)
-
 
 formattedName<-"GSE2411"
 pheno$dataset <- formattedName
@@ -477,7 +477,8 @@ dataObj12<-list(class=class,
 checkDataObject(dataObj12, "Dataset")
 boxplot(dataObj12$expr)
 
-#GSE2368
+
+## GSE2368 ----
 
 files<-list.celfiles(path="C:/Users/cecil/Desktop/Crit lab/proyectos/2019 firma stretch/Stretch signature/raw data/animals/coding/GSE2368_RAW",
                      listGzipped = TRUE,
@@ -496,8 +497,6 @@ names(class)<-files[1:4]
 expr<-exprs(eset)
 colnames(expr)<-files[1:4]
 
-#BiocManager::install("mgu74av2.db")
-library(mgu74av2.db)
 annotations<-data.frame(SYMBOL=sapply(contents(mgu74av2SYMBOL), paste, collapse=","), 
                         DESC=sapply(contents(mgu74av2GENENAME), paste, collapse=","),
                         ENTREZID=sapply(contents(mgu74av2ENTREZID), paste, collapse=","),
@@ -505,7 +504,6 @@ annotations<-data.frame(SYMBOL=sapply(contents(mgu74av2SYMBOL), paste, collapse=
 
 keys<-as.character(annotations$SYMBOL[match(rownames(expr), rownames(annotations))])
 names(keys)<-rownames(expr)
-
 
 pheno<-data.frame(disease=class, stretch=stretch, second_hit=second_hit, vt=vt)
 rownames(pheno)<-files[1:4]
@@ -536,8 +534,6 @@ names(class)<-files[5:8]
 expr<-exprs(eset)
 colnames(expr)<-files[5:8]
 
-#BiocManager::install("rgu34a.db")
-library(rgu34a.db)
 annotations<-data.frame(SYMBOL=sapply(contents(rgu34aSYMBOL), paste, collapse=","), 
                         DESC=sapply(contents(rgu34aGENENAME), paste, collapse=","),
                         ENTREZID=sapply(contents(rgu34aENTREZID), paste, collapse=","),
@@ -552,7 +548,6 @@ rownames(pheno)<-files[5:8]
 formattedName<-"GSE2368_rat"
 pheno$dataset <- formattedName
 
-# Only 4874 genes, should we do include this ?
 dataObj14<-list(class=class,
                 expr=expr,
                 keys=keys,
@@ -562,9 +557,10 @@ dataObj14<-list(class=class,
 checkDataObject(dataObj14, "Dataset")
 boxplot(dataObj14$expr)
 
-###################### Metaintegrator & COCONUT ################################
 
-#### Metaintegrator ####
+# Metaintegrator & COCONUT ################################
+
+## Metaintegrator ----
 
 validation_datasets_animal<-mget(ls(pattern="dataObj"))#Get multiple documents based on an index, type (optional) and ids
 
@@ -575,7 +571,7 @@ MetaObj_validation_animal$originalData <- validation_datasets_animal
 checkDataObject(MetaObj_validation_animal, "Meta", "Pre-Analysis")
 
 
-#### COCONUT ####
+## COCONUT ----
 
 coconutRes_validation_animal <- coconutMetaIntegrator(MetaObj_validation_animal)
 coco_out_validation_animal <- combineCOCOoutput(coconutRes_validation_animal)

@@ -1,10 +1,3 @@
-#############################################################################
-######################### Read miRNA datasets ###############################
-
-# WITHOUT 3p and 5p
-# WITH organism
-
-#################################
 
 library(limma)
 library(stringr)
@@ -14,22 +7,9 @@ library(oligo)
 library(MetaIntegrator)
 library(COCONUT)
 
-#################################
+# Read miRNA datasets ###############################
 
-### About metaintegrator objects:
-#The final datasetObject should have the structure:
-
-#  datasetObject: named list
-#$class: named vector. Names are sample names. Values are 0 if control, 1 if case.
-#$expr: matrix. Row names are probe names. Column names are sample names. Values are expression values
-#$keys: named vector. Names are probe names. Values are gene names.
-#$pheno: data frame. Row names are the sample names. Column names are the annotation information (none required).
-#$formattedName: string. A formatted name for this dataset which will be used in plots.
-
-##################################
-
-
-### GSE36256: rat cell line
+## GSE36256: rat cell line ----
 
 targets<-readTargets("C:/Users/cecil/Desktop/Crit lab/proyectos/2019 firma stretch/Stretch signature/code/targets_GSE36256.txt") 
 f<-function(x) as.numeric(x$Flags>-99)
@@ -81,7 +61,7 @@ mirDataObj1 <- list(class=class,
 checkDataObject(mirDataObj1, "Dataset")
 
 
-### GSE75100: human cell line
+## GSE75100: human cell line ----
 
 targets<-readTargets("C:/Users/cecil/Desktop/Crit lab/proyectos/2019 firma stretch/Stretch signature/code/targets_GSE75100.txt")
 RG<-read.maimages(targets, source="genepix", wt.fun=f, green.only = TRUE)
@@ -129,7 +109,7 @@ mirDataObj2<-list(class=class,
 checkDataObject(mirDataObj2, "Dataset")
 
 
-### GSE131645: mouse cell line
+## GSE131645: mouse cell line ----
 
 files<-list.celfiles(path="C:/Users/cecil/Desktop/Crit lab/proyectos/2019 firma stretch/Stretch signature/raw data/cells/non_coding/GSE131645_RAW", listGzipped = TRUE, full.names=TRUE)
 files<-files[grep("Cell_",files)]
@@ -177,10 +157,10 @@ mirDataObj3<-list(class=class,
 
 checkDataObject(mirDataObj3, "Dataset")
 
-####################### Metaintegrator & COCONUT ###############################
+# Metaintegrator & COCONUT ###############################
 
 
-#### Metaintegrator ####
+## Metaintegrator ----
 
 datasets <- list(mirDataObj1, mirDataObj2, mirDataObj3)
 names(datasets) <- c(mirDataObj1$formattedName, 
@@ -191,7 +171,7 @@ mirMetaObj$originalData <- datasets
 
 checkDataObject(mirMetaObj, "Meta", "Pre-Analysis")
 
-#### COCONUT ####
+## COCONUT ----
 
 coconut_miRNA <- coconutMetaIntegrator(mirMetaObj) 
 coco_out_miRNA <- combineCOCOoutput(coconut_miRNA) 

@@ -20,17 +20,17 @@ library("org.Hs.eg.db", character.only = TRUE)
 library(DOSE)
 library(ungeviz)
 library(DESeq2)
+library(pspearman)
 
 source("scripts/gm_mean_v2.R")
 
- holi ####
 
 # miRNA signature ##############################################################
 
 ## 1. Read miRNA arrays ####
  
 # Output from:
-# source("CLM_load_mir_data_WO_3p5p.R")
+# source("read_mir_data.R")
 
 load("data objects/coconut_miRNA.RData")
 load("data objects/coco_out_miRNA.RData")
@@ -73,7 +73,7 @@ pheatmap(miRNAs[names(idx_miRNAs),order(legend$stretch)],
          #cutree_cols = 2,  #could be
          clustering_method = "complete",
          labels_col = legend$stretch[order(legend$stretch)],
-         filename="Fig2_heatmap_miRNAs.pdf")
+         filename="plots/Fig2_heatmap_miRNAs.pdf")
 dev.off()
 
 ### C. Metascore of miRNAs
@@ -101,12 +101,12 @@ ggplot(df, aes(x = condition, y = score))+
   scale_fill_manual(values=colors_two)+
   scale_color_manual(values=colors_two)+
   labs(y="Meta-score", x=NULL)
-ggsave("Fig2_metascore_miRNAs.pdf", dpi=300, useDingbats=FALSE)  
+ggsave("plots/Fig2_metascore_miRNAs.pdf", dpi=300, useDingbats=FALSE)  
 dev.off()
 
-### Sup: miRNA expression per dataset
+wilcox.test(score~condition, data = df)
 
-### Antes o despues de coconut??? ya no me acuerdo.
+### Sup: miRNA expression per dataset
 
 pheno <- coco_out_miRNA$pheno
 pheno <- bind_cols(pheno, t(coco_out_miRNA$genes)[, names(idx_miRNAs)])
@@ -124,11 +124,11 @@ pheno %>% pivot_longer(cols = 4:9, names_to = "gene", values_to = "value") %>%
   scale_fill_manual(values=ann_colors)+
   scale_color_manual(values=ann_colors)+
   facet_wrap(~gene, scales = "free", nrow = 2)
-
+ggsave("plots/SUP_miRNAs_per_dataset.pdf", dpi=300, useDingbats=FALSE)  
+dev.off()
 
 
 # miRNA targets ################################################################
-
 
 targets_miRNAs <- list_multimir("mirna")
 target_ids <- targets_miRNAs[grep(paste(names(idx_miRNAs), "($|\\-3p$|\\-5p$)",sep="", collapse="|"), targets_miRNAs$mature_mirna_id),] 
@@ -175,7 +175,7 @@ rm(gene_targets_human, gene_targets_mouse, gene_targets_rat, target_ids, targets
 ## 1. Read cell datasets ####
 
 # Output from:
-# source("CLM_read_cell_datasets.R")
+# source("read_cell_datasets.R")
 
 load("data objects/coconut_genes_cells.RData")
 load("data objects/coco_out_genes_cells.RData")
@@ -225,7 +225,7 @@ idx_genes_cells<-rownames(tt_genes_cells)
 input_venn <- c(Stretch=nrow(tt_genes_cells), 
                 Second_hit=nrow(tt_genes_second_hit),
                 "Stretch&Second_hit"=sum(rownames(tt_genes_cells) %in% rownames(tt_genes_second_hit)))
-pdf("Fig3_venn_diagram.pdf")
+pdf("plots/Fig3_venn_diagram.pdf")
 plot(euler(input_venn),
      fills=c("#507779", "#D9843A"),
      quantities=TRUE)
@@ -246,7 +246,7 @@ ggplot(gene_universe, aes(x = logFC, y = -log10(adj.P.Val)))+
              col = "#507779")+
   geom_hline(yintercept = -log10(0.01),
              linetype = "dashed")
-ggsave("Fig3_volcanoplot_cell_universe.pdf", dpi=300, useDingbats=FALSE)  
+ggsave("plots/Fig3_volcanoplot_cell_universe.pdf", dpi=300, useDingbats=FALSE)  
 dev.off()
 
 ### C. Overrepresentation analysis
@@ -269,7 +269,7 @@ int.GOs <- int.GOs$Description
 length(int.GOs)
 
 res2 <- pairwise_termsim(res, showCategory = 1000)
-pdf("Fig3_treeplot.pdf",
+pdf("plots/Fig3_treeplot.pdf",
     paper = "a4r")
 treeplot(res2, 
          showCategory = int.GOs,
@@ -288,7 +288,7 @@ dev.off()
 ## 1. Read animal datsets ####
 
 # Output from:
-# source("CLM_read_animal_datasets.R")
+# source("read_animal_datasets.R")
 
 load("data objects/coconutRes_validation_animal.RData")
 load("data objects/coco_out_validation_animal.RData")
@@ -338,8 +338,13 @@ ggplot(df, aes(x = group, y = score))+
   scale_fill_manual(values=colors_two)+
   scale_color_manual(values=colors_two)+
   labs(y="Meta-score", x=NULL)
-ggsave("Fig4_metascore_animal_allgenes.pdf", dpi=300, useDingbats=FALSE)  
+ggsave("plots/Fig4_metascore_animal_allgenes.pdf", dpi=300, useDingbats=FALSE)  
 dev.off()
+
+aggregate(score~group, data=df, FUN=summary)
+model.aov.animal<-aov(score~as.factor(condition):as.factor(second_hit), data=df)
+summary(model.aov.animal)
+TukeyHSD(model.aov.animal)
 
 ### B. ROC curve
 
@@ -349,7 +354,7 @@ roc.obj<-roc(df$condition, probs, ci=TRUE)
 roc.obj
 #AUC=0.878
 
-pdf("Fig4_ROC_animal_allgenes.pdf")
+pdf("plots/Fig4_ROC_animal_allgenes.pdf")
 ggroc(roc.obj, col="#507779", size=2, legacy.axes = TRUE)+
   theme_bw()+
   geom_segment(aes(x = 0, xend = 1, y = 0, yend = 1),
@@ -375,8 +380,11 @@ ggplot(df[!is.na(df$vt_group),], aes(x = vt_group, y = score))+
   stat_boxplot(geom = "errorbar", width = 0.3)+
   stat_summary(geom = "hpline", fun = "median")+
   theme(legend.position = "none")
-ggsave("Fig4_Metascore_allgenes_vt_group.pdf", useDingbats=FALSE)
+ggsave("plots/Fig4_Metascore_allgenes_vt_group.pdf", useDingbats=FALSE)
 dev.off()
+
+cor.sp<-spearman.test(df$score, df$vt_group)
+cor.sp
 
 ## 4. greedy selection of genes ####
 
@@ -432,7 +440,7 @@ pheatmap(t(mat),
          labels_col = group[order(group)],
          #labels_row = rownames(genes_long),
          fontsize_col=2,
-         filename="Fig4_heatmap_greedy_genes.pdf")
+         filename="plots/Fig4_heatmap_greedy_genes.pdf")
 dev.off()
 
 ### E. Metascore
@@ -463,8 +471,12 @@ ggplot(df, aes(x = group, y = score))+
   scale_fill_manual(values=colors_two)+
   scale_color_manual(values=colors_two)+
   labs(y="Meta-score", x=NULL)
-ggsave("Fig4_metascore_greedy_genes.pdf", dpi=300, useDingbats=FALSE)  
+ggsave("plots/Fig4_metascore_greedy_genes.pdf", dpi=300, useDingbats=FALSE)  
 
+aggregate(score~group, data=df, FUN=summary)
+model.aov.animal<-aov(score~as.factor(condition):as.factor(second_hit), data=df)
+summary(model.aov.animal)
+TukeyHSD(model.aov.animal)
 
 ### F. ROC curve
 
@@ -473,7 +485,7 @@ probs<-predict(stretch.glm, df, type="response")
 roc.obj<-roc(df$condition, probs, ci=FALSE)
 as.numeric(roc.obj$auc)
 
-pdf("Fig4_ROC_greedy_genes.pdf")
+pdf("plots/Fig4_ROC_greedy_genes.pdf")
 ggroc(roc.obj, col="#507779", size=2, legacy.axes = TRUE)+
   theme_bw()+
   geom_segment(aes(x = 0, xend = 1, y = 0, yend = 1),
@@ -499,8 +511,11 @@ ggplot(df[!is.na(df$vt_group),], aes(x = vt_group, y = score))+
   stat_boxplot(geom = "errorbar", width = 0.3)+
   stat_summary(geom = "hpline", fun = "median")+
   theme(legend.position = "none")
-ggsave("Fig4_Metascore_greedygenes_vt_group.pdf", useDingbats=FALSE)
+ggsave("plots/Fig4_Metascore_greedygenes_vt_group.pdf", useDingbats=FALSE)
 dev.off()
+
+cor.sp<-spearman.test(df$score, df$vt_group)
+cor.sp
 
 ### Sup: gene expression per dataset
 
@@ -520,7 +535,8 @@ pheno %>% pivot_longer(cols = 7:12, names_to = "gene", values_to = "value") %>%
   scale_fill_manual(values=ann_colors)+
   scale_color_manual(values=ann_colors)+
   facet_wrap(~gene, scales = "free", nrow = 2)
-
+ggsave("plots/SUP_animal_genes_per_dataset.pdf", useDingbats=FALSE)
+dev.off()
 
 ### Same thing for cells
 
@@ -540,7 +556,8 @@ pheno %>% pivot_longer(cols = 6:11, names_to = "gene", values_to = "value") %>%
   scale_fill_manual(values=ann_colors)+
   scale_color_manual(values=ann_colors)+
   facet_wrap(~gene, scales = "free", nrow = 2)
-
+ggsave("plots/SUP_cells_genes_per_dataset.pdf", useDingbats=FALSE)
+dev.off()
 
 # RNAseq external validations ##################################################
 
@@ -677,6 +694,13 @@ impares <- seq(1,24,2)
 delta_score <- mirnas_abundance$score[impares] - mirnas_abundance$score[impares+1]
 roc.curve <- roc(as.factor(mirnas_abundance$delta_strain[impares]<0)~delta_score, ci=TRUE)
 as.numeric(roc.curve$auc)
+
+
+with(mirnas_abundance[!is.na(mirnas_abundance$strain) & mirnas_abundance$delta_strain>=0,],
+     t.test(score[impares], score[impares+1], paired=TRUE))
+with(mirnas_abundance[!is.na(mirnas_abundance$strain) & mirnas_abundance$delta_strain<0,],
+     t.test(score[impares], score[impares+1], paired=TRUE))
+
 
 pdf("Fig5_BALF_ROC.pdf")
 ggroc(roc.curve, col="#507779", size=2, legacy.axes = TRUE)+

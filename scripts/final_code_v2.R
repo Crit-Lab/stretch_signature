@@ -586,6 +586,22 @@ ggplot(samples, aes(x = condition, y = score))+
   geom_jitter(width = 0.01)
 
 
+
+stretch.glm <- glm(condition ~ score, family=binomial, data = samples)
+probs<-predict(stretch.glm, samples, type="response")
+roc.obj<-roc(df$condition, probs, ci=FALSE)
+as.numeric(roc.obj$auc)
+
+
+ggroc(roc.obj, col="#507779", size=2, legacy.axes = TRUE)+
+  theme_bw()+
+  geom_segment(aes(x = 0, xend = 1, y = 0, yend = 1),
+               color = "darkgrey", 
+               linetype = "dashed")
+
+
+
+
 # Ex vivo lungs RNA and miRNA ##################################################
 
 ## miRNA ####

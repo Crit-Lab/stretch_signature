@@ -671,6 +671,14 @@ int.genes <- as.data.frame(t(norm.counts[rownames(norm.counts) %in% greedy_genes
 samples <- cbind(samples, int.genes)
 samples$score <- apply(samples[,colnames(samples) %in% greedy_genes], MARGIN = 1, FUN = gm_mean)
 
+samples %>% 
+  mutate(across(4:9, ~((.x-mean(.))/sd(.))+2)) %>% 
+  mutate(score = apply(.[,colnames(.) %in% greedy_genes], MARGIN = 1, FUN = gm_mean)) %>% 
+  pivot_longer(cols = 4:10, values_to = "counts", names_to = "gene") %>% 
+  ggplot(aes(x = condition, y = counts))+
+  geom_point()+
+  facet_wrap(~gene, scales = "free")
+
 ### 2. Plots #####
 
 ## A. score

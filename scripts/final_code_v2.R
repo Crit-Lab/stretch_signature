@@ -334,7 +334,7 @@ ggplot(df, aes(x = group, y = score))+
   geom_violin(aes(fill = group, alpha=0.5), col=NA)+
   geom_jitter(aes(col = group), width=0.15)+
   theme_bw(base_size = 24)+
-  theme(legend.position = "none", aspect.ratio = 1.618)+
+  theme(legend.position = "none", aspect.ratio = 1)+
   scale_fill_manual(values=colors_two)+
   scale_color_manual(values=colors_two)+
   labs(y="Meta-score", x=NULL)
@@ -356,7 +356,7 @@ roc.obj
 
 pdf("plots/Fig4_ROC_animal_allgenes.pdf")
 ggroc(roc.obj, col="#507779", size=2, legacy.axes = TRUE)+
-  theme_bw()+
+  theme_bw(base_size = 24)+
   geom_segment(aes(x = 0, xend = 1, y = 0, yend = 1),
                color = "darkgrey", 
                linetype = "dashed")
@@ -369,17 +369,17 @@ breaks <- c(-1, 9, 21, 39)
 df$vt[df$vt==0] <- 6
 df$vt_group <- cut(df$vt, 
                    breaks = breaks,
-                   labels=c("Spont", "10-20 ml/Kg", ">20 ml/Kg"),
+                   labels=c("Spont", "10-20", ">20"),
                    ordered_result=TRUE)
 
 ggplot(df[!is.na(df$vt_group),], aes(x = vt_group, y = score))+
-  theme_bw()+
-  labs(x="Tidal volume", y="Meta-Score")+
+  theme_bw(base_size = 24)+
+  labs(x="Tidal volume (ml/Kg)", y="Meta-Score")+
   geom_jitter(aes(col = vt_group), width = 0.05)+
   scale_color_manual(values=c("#F5DCC1", "#92ABAD", "#5B8283"))+
   stat_boxplot(geom = "errorbar", width = 0.3)+
   stat_summary(geom = "hpline", fun = "median")+
-  theme(legend.position = "none")
+  theme(legend.position = "none", aspect.ratio = 1)
 ggsave("plots/Fig4_Metascore_allgenes_vt_group.pdf", useDingbats=FALSE)
 dev.off()
 
@@ -441,7 +441,7 @@ pheatmap(t(mat),
          #labels_row = rownames(genes_long),
          fontsize_col=2,
          filename="plots/Fig4_heatmap_greedy_genes.pdf")
-dev.off()
+
 
 ### E. Metascore
 
@@ -467,7 +467,7 @@ ggplot(df, aes(x = group, y = score))+
   geom_violin(aes(fill = group, alpha=0.5), col=NA)+
   geom_jitter(aes(col = group), width=0.15)+
   theme_bw(base_size = 24)+
-  theme(legend.position = "none", aspect.ratio = 1.618)+
+  theme(legend.position = "none", aspect.ratio = 1)+
   scale_fill_manual(values=colors_two)+
   scale_color_manual(values=colors_two)+
   labs(y="Meta-score", x=NULL)
@@ -487,7 +487,7 @@ as.numeric(roc.obj$auc)
 
 pdf("plots/Fig4_ROC_greedy_genes.pdf")
 ggroc(roc.obj, col="#507779", size=2, legacy.axes = TRUE)+
-  theme_bw()+
+  theme_bw(base_size = 24)+
   geom_segment(aes(x = 0, xend = 1, y = 0, yend = 1),
                color = "darkgrey", 
                linetype = "dashed")
@@ -500,17 +500,17 @@ breaks <- c(-1, 9, 21, 39)
 df$vt[df$vt == 0] <- 6
 df$vt_group <- cut(df$vt, 
                    breaks = breaks,
-                   labels=c("Spont", "10-20 ml/Kg", ">20 ml/Kg"),
+                   labels=c("Spont", "10-20", ">20"),
                    ordered_result=TRUE)
 
 ggplot(df[!is.na(df$vt_group),], aes(x = vt_group, y = score))+
-  theme_bw()+
-  labs(x="Tidal volume", y="Meta-Score")+
+  theme_bw(base_size = 24)+
+  labs(x="Tidal volume (ml/Kg)", y="Meta-Score")+
   geom_jitter(aes(col = vt_group), width = 0.05)+
   scale_color_manual(values=c("#F5DCC1", "#92ABAD", "#5B8283"))+
   stat_boxplot(geom = "errorbar", width = 0.3)+
   stat_summary(geom = "hpline", fun = "median")+
-  theme(legend.position = "none")
+  theme(legend.position = "none", aspect.ratio = 1)
 ggsave("plots/Fig4_Metascore_greedygenes_vt_group.pdf", useDingbats=FALSE)
 dev.off()
 
@@ -634,9 +634,12 @@ samples$score <- apply(int.genes[rownames(int.genes) %in% paste0("hsa-", tolower
 ## A. score
 
 ggplot(samples, aes(x = condition, y = score))+
-  theme_bw()+
-  geom_jitter(aes(col = condition), width = 0.1)+
-  scale_color_manual(values = c("#ECC192","#507779" ))
+  theme_bw(base_size = 24)+
+  geom_jitter(aes(col = condition), width = 0.1, size = 3)+
+  scale_color_manual(values = c("#ECC192","#507779" ))+
+  theme(aspect.ratio = 1.62,
+        legend.position = "none")+
+  labs(x="", y="miRNA Score")
 ggsave("plots/Fig5_exvivo_miRNA_score.pdf", useDingbats=FALSE)
 dev.off()
 
@@ -659,14 +662,49 @@ dev.off()
 
 ## RNA ####
 
+load("data objects/exvivo_lungs_mRNA_normcounts.RData")
 
+load("data objects/exvivo_lung_sample_data.RData")
+rownames(samples) <- colnames(norm.counts)
 
+int.genes <- as.data.frame(t(norm.counts[rownames(norm.counts) %in% greedy_genes, ]))
+samples <- cbind(samples, int.genes)
+samples$score <- apply(samples[,colnames(samples) %in% greedy_genes], MARGIN = 1, FUN = gm_mean)
 
+### 2. Plots #####
 
+## A. score
+
+ggplot(samples, aes(x = condition, y = score))+
+  theme_bw(base_size = 24)+
+  geom_jitter(aes(col = condition), width = 0.1, size = 3)+
+  scale_color_manual(values = c("#ECC192","#507779" ))+
+  theme(aspect.ratio = 1.62,
+        legend.position = "none")+
+  labs(x="", y="RNA Score")
+ggsave("plots/Fig5_exvivo_RNA_score.pdf", useDingbats=FALSE)
+dev.off()
+
+## B. ROC curve
+
+samples$comp <- c(0,0,1,1,0,1)
+
+stretch.glm <- glm(comp ~ score, family=binomial, data = samples)
+probs<-predict(stretch.glm, samples, type="response")
+roc.obj<-roc(samples$comp, probs, ci=FALSE)
+as.numeric(roc.obj$auc)
+
+pdf("plots/Fig5_exvivo_RNA_ROC.pdf")
+ggroc(roc.obj, col="#507779", size=2, legacy.axes = TRUE)+
+  theme_bw()+
+  geom_segment(aes(x = 0, xend = 1, y = 0, yend = 1),
+               color = "darkgrey", 
+               linetype = "dashed")
+dev.off()
 
 # miRNA signature in BALF ######################################################
 
-load("BALF_miRNAs.RData")
+load("data objects/BALF_miRNAs.RData")
 
 mirnas_abundance <- mirnas_balf
 mirnas_abundance[,3:14] <- mirnas_abundance[,3:14]/mirnas_abundance$`Total Counts`
@@ -703,7 +741,7 @@ ggplot(mirnas_abundance[!is.na(mirnas_abundance$strain),], aes(x=as.factor(vt), 
   scale_x_discrete(labels=c("3 ml/Kg", "6 ml/Kg"))+
   labs(y="miRNA score", x=NULL)+
   facet_grid(~(delta_strain<0))
-ggsave("Fig5_BALF_metascores.pdf", useDingbats=FALSE)
+ggsave("plots/Fig5_BALF_metascores.pdf", useDingbats=FALSE)
 dev.off()
 
 impares <- seq(1,24,2)

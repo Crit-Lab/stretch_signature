@@ -104,7 +104,16 @@ ggplot(df, aes(x = condition, y = score))+
 ggsave("plots/Fig2_metascore_miRNAs.pdf", dpi=300, useDingbats=FALSE)  
 dev.off()
 
-wilcox.test(score~condition, data = df)
+t.test(score~condition, data = df)
+
+### C. AUC
+
+
+stretch.glm <- glm(condition ~ score, family=binomial, data = df)
+probs<-predict(stretch.glm, df, type="response")
+roc.obj<-roc(df$condition, probs, ci=TRUE)
+roc.obj
+
 
 ### Sup: miRNA expression per dataset
 
@@ -482,8 +491,8 @@ TukeyHSD(model.aov.animal)
 
 stretch.glm <- glm(condition ~ score, family=binomial, data = df)
 probs<-predict(stretch.glm, df, type="response")
-roc.obj<-roc(df$condition, probs, ci=FALSE)
-as.numeric(roc.obj$auc)
+roc.obj<-roc(df$condition, probs, ci=TRUE)
+roc.obj
 
 pdf("plots/Fig4_ROC_greedy_genes.pdf")
 ggroc(roc.obj, col="#507779", size=2, legacy.axes = TRUE)+
@@ -559,9 +568,9 @@ pheno %>% pivot_longer(cols = 6:11, names_to = "gene", values_to = "value") %>%
 ggsave("plots/SUP_cells_genes_per_dataset.pdf", useDingbats=FALSE)
 dev.off()
 
-# RNAseq external validations ##################################################
+# External validations ##################################################
 
-#### GSE114132 
+## GSE114132 ----
 
 load("data objects/GSE114132_rawcounts.RData")
 
@@ -581,32 +590,43 @@ int.genes <- counts(dds, normalized = TRUE)[toupper(rownames(counts(dds))) %in% 
 
 samples$score <- apply(int.genes, MARGIN = 2, FUN = gm_mean)
 
+
 ggplot(samples, aes(x = condition, y = score))+
-  geom_boxplot(outlier.shape = NA)+
-  geom_jitter(width = 0.01)
+  geom_violin(aes(fill = condition, alpha=0.5), col=NA)+
+  geom_jitter(aes(col = condition), width=0.15, size = 3)+
+  theme_bw(base_size = 24)+
+  theme(legend.position = "none", aspect.ratio = 1.618)+
+  scale_fill_manual(values = c("#ECC192","#507779" ))+
+  scale_color_manual(values = c("#ECC192","#507779" ))+
+  labs(y="RNA score", x=NULL)
+
+ggsave("plots/Fig5_GSE114132_score.pdf", useDingbats=FALSE)
+dev.off()
+
+t.test(score~condition, samples)
 
 
 
 stretch.glm <- glm(condition ~ score, family=binomial, data = samples)
 probs<-predict(stretch.glm, samples, type="response")
-roc.obj<-roc(df$condition, probs, ci=FALSE)
+roc.obj<-roc(samples$condition, probs, ci=FALSE)
 as.numeric(roc.obj$auc)
 
-
+pdf("plots/Fig5_GSE114132_ROC.pdf")
 ggroc(roc.obj, col="#507779", size=2, legacy.axes = TRUE)+
   theme_bw()+
   geom_segment(aes(x = 0, xend = 1, y = 0, yend = 1),
                color = "darkgrey", 
                linetype = "dashed")
 
+dev.off()
 
 
+## Ex vivo lungs RNA and miRNA ##################################################
 
-# Ex vivo lungs RNA and miRNA ##################################################
+### miRNA ####
 
-## miRNA ####
-
-### 1. Read mirDeep data #####
+#### 1. Read mirDeep data #####
 
 load("data objects/exvivo_lungs_miRNA_counts.RData")
 
@@ -629,19 +649,21 @@ samples$score <- apply(int.genes[rownames(int.genes) %in% paste0("hsa-", tolower
         MARGIN = 2, 
         FUN = gm_mean)
 
-### 2. Plots #####
+#### 2. Plots #####
 
 ## A. score
 
 ggplot(samples, aes(x = condition, y = score))+
+  geom_violin(aes(fill = condition, alpha=0.5), col=NA)+
+  geom_jitter(aes(col = condition), width=0.15, size = 3)+
   theme_bw(base_size = 24)+
-  geom_jitter(aes(col = condition), width = 0.1, size = 3)+
+  theme(legend.position = "none", aspect.ratio = 1.618)+
+  scale_fill_manual(values = c("#ECC192","#507779" ))+
   scale_color_manual(values = c("#ECC192","#507779" ))+
-  theme(aspect.ratio = 1.62,
-        legend.position = "none")+
-  labs(x="", y="miRNA Score")
+  labs(y="miRNA score", x=NULL)
 ggsave("plots/Fig5_exvivo_miRNA_score.pdf", useDingbats=FALSE)
 dev.off()
+
 
 ## B. ROC curve
 
@@ -649,8 +671,8 @@ samples$comp <- c(0,0,1,1,0,1)
 
 stretch.glm <- glm(comp ~ score, family=binomial, data = samples)
 probs<-predict(stretch.glm, samples, type="response")
-roc.obj<-roc(samples$comp, probs, ci=FALSE)
-as.numeric(roc.obj$auc)
+roc.obj<-roc(samples$comp, probs, ci=TRUE)
+roc.obj
 
 pdf("plots/Fig5_exvivo_miRNA_ROC.pdf")
 ggroc(roc.obj, col="#507779", size=2, legacy.axes = TRUE)+
@@ -660,7 +682,7 @@ ggroc(roc.obj, col="#507779", size=2, legacy.axes = TRUE)+
                linetype = "dashed")
 dev.off()
 
-## RNA ####
+### RNA ####
 
 load("data objects/exvivo_lungs_mRNA_normcounts.RData")
 
@@ -671,27 +693,22 @@ int.genes <- as.data.frame(t(norm.counts[rownames(norm.counts) %in% greedy_genes
 samples <- cbind(samples, int.genes)
 samples$score <- apply(samples[,colnames(samples) %in% greedy_genes], MARGIN = 1, FUN = gm_mean)
 
-samples %>% 
-  mutate(across(4:9, ~((.x-mean(.))/sd(.))+2)) %>% 
-  mutate(score = apply(.[,colnames(.) %in% greedy_genes], MARGIN = 1, FUN = gm_mean)) %>% 
-  pivot_longer(cols = 4:10, values_to = "counts", names_to = "gene") %>% 
-  ggplot(aes(x = condition, y = counts))+
-  geom_point()+
-  facet_wrap(~gene, scales = "free")
 
-### 2. Plots #####
+#### 2. Plots #####
 
 ## A. score
 
 ggplot(samples, aes(x = condition, y = score))+
+  geom_violin(aes(fill = condition, alpha=0.5), col=NA)+
+  geom_jitter(aes(col = condition), width=0.15, size = 3)+
   theme_bw(base_size = 24)+
-  geom_jitter(aes(col = condition), width = 0.1, size = 3)+
+  theme(legend.position = "none", aspect.ratio = 1.618)+
+  scale_fill_manual(values = c("#ECC192","#507779" ))+
   scale_color_manual(values = c("#ECC192","#507779" ))+
-  theme(aspect.ratio = 1.62,
-        legend.position = "none")+
-  labs(x="", y="RNA Score")
+  labs(y="RNA score", x=NULL)
 ggsave("plots/Fig5_exvivo_RNA_score.pdf", useDingbats=FALSE)
 dev.off()
+
 
 ## B. ROC curve
 
@@ -699,8 +716,8 @@ samples$comp <- c(0,0,1,1,0,1)
 
 stretch.glm <- glm(comp ~ score, family=binomial, data = samples)
 probs<-predict(stretch.glm, samples, type="response")
-roc.obj<-roc(samples$comp, probs, ci=FALSE)
-as.numeric(roc.obj$auc)
+roc.obj<-roc(samples$comp, probs, ci=TRUE)
+roc.obj
 
 pdf("plots/Fig5_exvivo_RNA_ROC.pdf")
 ggroc(roc.obj, col="#507779", size=2, legacy.axes = TRUE)+
@@ -710,7 +727,8 @@ ggroc(roc.obj, col="#507779", size=2, legacy.axes = TRUE)+
                linetype = "dashed")
 dev.off()
 
-# miRNA signature in BALF ######################################################
+
+## miRNA signature in BALF ######################################################
 
 load("data objects/BALF_miRNAs.RData")
 
@@ -756,7 +774,7 @@ impares <- seq(1,24,2)
 delta_score <- mirnas_abundance$score[impares] - mirnas_abundance$score[impares+1]
 roc.curve <- roc(as.factor(mirnas_abundance$delta_strain[impares]<0)~delta_score, ci=TRUE)
 as.numeric(roc.curve$auc)
-
+roc.curve
 
 with(mirnas_abundance[!is.na(mirnas_abundance$strain) & mirnas_abundance$delta_strain>=0,],
      t.test(score[impares], score[impares+1], paired=TRUE))
@@ -766,6 +784,82 @@ with(mirnas_abundance[!is.na(mirnas_abundance$strain) & mirnas_abundance$delta_s
 
 pdf("Fig5_BALF_ROC.pdf")
 ggroc(roc.curve, col="#507779", size=2, legacy.axes = TRUE)+
+  theme_bw()+
+  geom_segment(aes(x = 0, xend = 1, y = 0, yend = 1),
+               color = "darkgrey", 
+               linetype = "dashed")
+dev.off()
+
+
+## miRNA signature in COVID19 patients ########################################
+
+# GSE197258
+
+covid_data <- read.table("data objects/GSE197258_raw_norm_counts.csv", sep = ",")
+colnames(covid_data) <- covid_data[1,]
+covid_data <- covid_data[-1,]
+covid_norm <- covid_data[,52:97]
+covid_norm <- data.frame(apply(covid_norm, MARGIN = 2, FUN = as.numeric))
+covid_norm$precursor <- covid_data$precursor
+
+load("data objects/covid_miRNA_sample_data.RData")
+samples$clasif <- ifelse((samples$PEEP_2 - samples$PEEP_1)>= 0, "2", "1")
+samples$delta_pCO2 <- samples$pCO2_2-samples$pCO2_1
+samples$pCO2_by_PEEP <- ifelse(samples$clasif == 1, samples$delta_pCO2*-1, samples$delta_pCO2)
+
+
+numbers <- str_replace(names(idx_miRNAs), "miR", "")
+
+int.data <- covid_norm[str_detect(covid_norm$precursor, paste(numbers, collapse ="|")),]
+rownames(int.data) <- int.data$precursor
+int.data <- int.data[,-47]
+
+# Manage the two locus of 181b
+int.data["hsa-mir-181b-1",] <- int.data["hsa-mir-181b-1",] + int.data["hsa-mir-181b-2",]
+rownames(int.data)[rownames(int.data) == "hsa-mir-181b-1"] <- "hsa-mir-181b"
+int.data <- int.data[-4,]
+
+samples$score <- apply(int.data[rownames(int.data) %in% c("hsa-mir-383","hsa-mir-877", "hsa-mir-130b"),],
+               MARGIN = 2,
+               FUN = gm_mean) -
+  apply(int.data[rownames(int.data) %in% c("hsa-mir-146b","hsa-mir-181b", "hsa-mir-26b"),],
+        MARGIN = 2,
+        FUN = gm_mean) 
+
+
+#### 2. Plots #####
+
+samples <-  samples[!is.na(samples$pCO2_by_PEEP),]
+
+## A. score
+
+ggplot(samples, aes(x = as.factor(pCO2_by_PEEP > 0), y = score))+
+  geom_violin(aes(fill = as.factor(pCO2_by_PEEP > 0), alpha=0.5), col=NA)+
+  geom_jitter(aes(col = as.factor(pCO2_by_PEEP > 0)), width=0.15, size = 3)+
+  theme_bw(base_size = 24)+
+  theme(legend.position = "none", aspect.ratio = 1.618)+
+  scale_fill_manual(values = c("#ECC192","#507779" ))+
+  scale_color_manual(values = c("#ECC192","#507779" ))+
+  labs(y="Meta-score", x=NULL)
+
+
+ggsave("plots/Fig5_covid19_score.pdf", useDingbats=FALSE)
+dev.off()
+
+wilcox.test(score~as.factor(pCO2_by_PEEP > 0), samples)
+
+
+## B. ROC curve
+
+samples$comp <- ifelse(samples$pCO2_by_PEEP > 0, 1, 0)
+
+stretch.glm <- glm(comp ~ score, family=binomial, data = samples)
+probs<-predict(stretch.glm, samples, type="response")
+roc.obj<-roc(samples$comp, probs, ci=TRUE)
+roc.obj
+
+pdf("plots/Fig5_covid19_ROC.pdf")
+ggroc(roc.obj, col="#507779", size=2, legacy.axes = TRUE)+
   theme_bw()+
   geom_segment(aes(x = 0, xend = 1, y = 0, yend = 1),
                color = "darkgrey", 

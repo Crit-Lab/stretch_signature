@@ -104,6 +104,7 @@ ggplot(df, aes(x = condition, y = score))+
 ggsave("plots/Fig2_metascore_miRNAs.pdf", dpi=300, useDingbats=FALSE)  
 dev.off()
 
+shapiro.test(df$score)
 t.test(score~condition, data = df)
 
 ### C. AUC
@@ -603,6 +604,7 @@ ggplot(samples, aes(x = condition, y = score))+
 ggsave("plots/Fig5_GSE114132_score.pdf", useDingbats=FALSE)
 dev.off()
 
+shapiro.test(samples$score)
 t.test(score~condition, samples)
 
 
@@ -776,6 +778,10 @@ roc.curve <- roc(as.factor(mirnas_abundance$delta_strain[impares]<0)~delta_score
 as.numeric(roc.curve$auc)
 roc.curve
 
+
+shapiro.test(mirnas_abundance$score[!is.na(mirnas_abundance$strain) & mirnas_abundance$delta_strain>=0])
+shapiro.test(mirnas_abundance$score[!is.na(mirnas_abundance$strain) & mirnas_abundance$delta_strain<0])
+
 with(mirnas_abundance[!is.na(mirnas_abundance$strain) & mirnas_abundance$delta_strain>=0,],
      t.test(score[impares], score[impares+1], paired=TRUE))
 with(mirnas_abundance[!is.na(mirnas_abundance$strain) & mirnas_abundance$delta_strain<0,],
@@ -846,7 +852,7 @@ ggplot(samples, aes(x = as.factor(pCO2_by_PEEP > 0), y = score))+
 ggsave("plots/Fig5_covid19_score.pdf", useDingbats=FALSE)
 dev.off()
 
-wilcox.test(score~as.factor(pCO2_by_PEEP > 0), samples)
+t.test(score~as.factor(pCO2_by_PEEP > 0), samples)
 
 
 ## B. ROC curve

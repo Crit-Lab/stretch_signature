@@ -21,6 +21,7 @@ library(DOSE)
 library(ungeviz)
 library(DESeq2)
 library(pspearman)
+library(ggpubr)
 
 source("scripts/gm_mean_v2.R")
 
@@ -134,7 +135,7 @@ pheno %>% pivot_longer(cols = 4:9, names_to = "gene", values_to = "value") %>%
   scale_fill_manual(values=ann_colors)+
   scale_color_manual(values=ann_colors)+
   facet_wrap(~gene, scales = "free", nrow = 2)
-ggsave("plots/SUP_miRNAs_per_dataset.pdf", dpi=300, useDingbats=FALSE)  
+ggsave("plots/SUP2_miRNAs_per_dataset.pdf", dpi=300, useDingbats=FALSE)  
 dev.off()
 
 
@@ -396,6 +397,72 @@ dev.off()
 cor.sp<-spearman.test(df$score, df$vt_group)
 cor.sp
 
+### D: supplementary heatmap
+
+legend <- data.frame(file=colnames(coco_out_validation_animal$genes), stretch=coco_out_validation_animal$class.cntl0.dis1)
+annotation <- data.frame(stretch=as.factor(legend$stretch))
+rownames(annotation) <- colnames(coco_out_validation_animal$genes)
+
+ann_colors <- list(stretch=c("0"="#ECC192", "1"="#507779"))
+
+pheatmap(sel.genes[,order(legend$stretch)],
+         color=viridis(n=25, option="E"),
+         cellwidth = 15,
+         cellheight = 15,
+         # annotation_col=annotation,   Not pretty
+         scale="row",
+         cluster_cols = FALSE,
+         #cutree_cols = 2,  #could be
+         clustering_method = "complete",
+         labels_col = legend$stretch[order(legend$stretch)],
+         filename="plots/SUP5_all_animal_heatmap.pdf")
+dev.off()
+
+### E: supplementary random 144-gene signature
+
+random_AUCs<-vector(mode="numeric", length=10000)
+
+for(i in 1:10000) {
+  all_animal_genes <- c(positive_genes_animal, negative_genes_animal)
+  random.names <- sample(all_animal_genes, 144)
+  random.genes <- ifelse(random.names %in% positive_genes_animal, "UP", "DOWN")
+  names(random.genes) <- random.names
+  
+  df <- data.frame(score = apply(data.frame(sel.genes[rownames(sel.genes) %in% names(random.genes)[random.genes == "UP"], ]),
+                                 MARGIN = 2,
+                                 FUN = gm_mean) -
+                     apply(data.frame(sel.genes[rownames(sel.genes) %in% names(random.genes)[random.genes == "DOWN"], ]),
+                           MARGIN = 2,
+                           FUN = gm_mean),
+                   condition = coco_out_validation_animal$pheno$stretch,
+                   second_hit = coco_out_validation_animal$pheno$second_hit,
+                   group = as.factor(coco_out_validation_animal$pheno$stretch + 2*coco_out_validation_animal$pheno$second_hit),
+                   vt = coco_out_validation_animal$pheno$vt)
+  
+  
+  
+  model_animal<-glm(as.factor(condition)~score, family=binomial(link=logit), data=df)
+  probs<-predict(model_animal, df, type="response")
+  roc.obj<-roc(df$condition, probs, ci=TRUE)
+  random_AUCs[i]<-as.numeric(roc.obj$auc)
+}
+
+
+ggplot(NULL, aes(x=random_AUCs))+
+  geom_density(fill="darkblue", alpha=0.5)+
+  xlim(0.5,1)+
+  theme_bw(base_size = 24)+
+  theme(aspect.ratio=1/1.618)+
+  labs(x="AUC w/ 144 random genes", y="Density")
+ggsave("plots/SUP7_random_144_signature.pdf", useDingbats=FALSE)
+sum(random_AUCs>0.9)/length(random_AUCs)
+# 0.0525
+sum(random_AUCs>0.95)/length(random_AUCs)
+# 2e-04
+sum(random_AUCs>0.878)/length(random_AUCs)
+# 0.3238
+
+
 ## 4. greedy selection of genes ####
 
 greedy_set <- data.frame(t(sel.genes))
@@ -545,7 +612,7 @@ pheno %>% pivot_longer(cols = 7:12, names_to = "gene", values_to = "value") %>%
   scale_fill_manual(values=ann_colors)+
   scale_color_manual(values=ann_colors)+
   facet_wrap(~gene, scales = "free", nrow = 2)
-ggsave("plots/SUP_animal_genes_per_dataset.pdf", useDingbats=FALSE)
+ggsave("plots/SUP9_animal_genes_per_dataset.pdf", useDingbats=FALSE)
 dev.off()
 
 ### Same thing for cells
@@ -566,7 +633,99 @@ pheno %>% pivot_longer(cols = 6:11, names_to = "gene", values_to = "value") %>%
   scale_fill_manual(values=ann_colors)+
   scale_color_manual(values=ann_colors)+
   facet_wrap(~gene, scales = "free", nrow = 2)
-ggsave("plots/SUP_cells_genes_per_dataset.pdf", useDingbats=FALSE)
+ggsave("plots/SUP8_cells_genes_per_dataset.pdf", useDingbats=FALSE)
+dev.off()
+
+
+### Sup: random 6-gene signature AUC distribution
+
+random_AUCs<-vector(mode="numeric", length=10000)
+
+for(i in 1:10000) {
+  all_animal_genes <- c(positive_genes_animal, negative_genes_animal)
+  random.names <- sample(all_animal_genes, 6)
+  random.genes <- ifelse(random.names %in% positive_genes_animal, "UP", "DOWN")
+  names(random.genes) <- random.names
+  
+  df <- data.frame(score = apply(data.frame(sel.genes[rownames(sel.genes) %in% names(random.genes)[random.genes == "UP"], ]),
+                                 MARGIN = 2,
+                                 FUN = gm_mean) -
+                     apply(data.frame(sel.genes[rownames(sel.genes) %in% names(random.genes)[random.genes == "DOWN"], ]),
+                           MARGIN = 2,
+                           FUN = gm_mean),
+                   condition = coco_out_validation_animal$pheno$stretch,
+                   second_hit = coco_out_validation_animal$pheno$second_hit,
+                   group = as.factor(coco_out_validation_animal$pheno$stretch + 2*coco_out_validation_animal$pheno$second_hit),
+                   vt = coco_out_validation_animal$pheno$vt)
+  
+  
+  
+  model_animal<-glm(as.factor(condition)~score, family=binomial(link=logit), data=df)
+  probs<-predict(model_animal, df, type="response")
+  roc.obj<-roc(df$condition, probs, ci=TRUE)
+  random_AUCs[i]<-as.numeric(roc.obj$auc)
+}
+
+
+ggplot(NULL, aes(x=random_AUCs))+
+  geom_density(fill="darkblue", alpha=0.5)+
+  xlim(0.5,1)+
+  theme_bw(base_size = 24)+
+  theme(aspect.ratio=1/1.618)+
+  labs(x="AUC w/ 6 random genes", y="Density")
+ggsave("plots/SUP_random_greedy_signature.pdf", useDingbats=FALSE)
+sum(random_AUCs>0.97)/length(random_AUCs)
+# 0.0011
+sum(random_AUCs>0.95)/length(random_AUCs)
+# 0.0055
+
+### SUP: individual AUCs for each gene in the signature
+
+df <- cbind(df,
+            data.frame(greedy_set[,colnames(greedy_set) %in% greedy_genes[greedy_genes %in% positive_genes_animal]]))
+
+roc.values <- list()
+roc.plots <- list()
+
+for (i in 6:11){
+  stretch.glm <- glm(df[,2] ~ df[,i], family=binomial) 
+  probs <- predict(stretch.glm, df, type="response")
+  roc.obj <- roc(df$condition, probs, ci=TRUE)
+  roc.values[[i]] <-  roc.obj
+  
+  
+  roc.plots[[i]] <- ggroc(roc.obj, col="#507779", size=2, legacy.axes = TRUE)+
+    theme_bw(base_size = 24)+
+    geom_segment(aes(x = 0, xend = 1, y = 0, yend = 1),
+                 color = "darkgrey", 
+                 linetype = "dashed")+
+    theme(aspect.ratio = 1)
+  
+}
+
+pdf("plots/SUP10_individual_AUCs.pdf")
+ggarrange(roc.plots[[6]],roc.plots[[7]],roc.plots[[8]],roc.plots[[9]],roc.plots[[10]],roc.plots[[11]],
+          nrow = 2,
+          ncol = 3,
+          labels = greedy_genes[-7])
+dev.off()
+
+
+### SUP: score per dataset
+
+df <- cbind(df, 
+            dataset = coco_out_validation_animal$pheno$dataset)
+
+ggplot(df, aes(x = dataset, y = score, fill = as.factor(stretch), col = as.factor(stretch)))+
+  geom_violin(aes(fill=as.factor(stretch), alpha=0.5), col=NA)+
+  geom_point(aes(col=as.factor(stretch)), position = position_jitterdodge())+
+  theme_bw(base_size = 10)+
+  theme(legend.position = "none", aspect.ratio = 1/1.618,
+        axis.text.x = element_text(angle = 45, hjust = 1))+
+  labs(x = NULL, y = NULL)+
+  scale_fill_manual(values=ann_colors)+
+  scale_color_manual(values=ann_colors)
+ggsave("plots/SUP11_score_per_dataset.pdf", useDingbats=FALSE)
 dev.off()
 
 # External validations ##################################################
@@ -684,6 +843,24 @@ ggroc(roc.obj, col="#507779", size=2, legacy.axes = TRUE)+
                linetype = "dashed")
 dev.off()
 
+### SUP: individual values
+
+samples <- cbind(samples,
+                 t(int.genes))
+
+samples %>% pivot_longer(cols = 5:10, values_to = "counts", names_to = "miR") %>% 
+  ggplot(aes(x = condition, y = counts))+
+  geom_violin(aes(fill = condition, alpha=0.5), col=NA)+
+  geom_jitter(aes(col = condition), width=0.15, size = 3)+
+  theme_bw(base_size = 24)+
+  theme(legend.position = "none", aspect.ratio = 1.618)+
+  scale_fill_manual(values = c("#ECC192","#507779" ))+
+  scale_color_manual(values = c("#ECC192","#507779" ))+
+  facet_wrap(~miR, scales = "free")
+ggsave("plots/SUP14_exvivo_miRNA_counts.pdf", useDingbats=FALSE)
+dev.off()
+
+
 ### RNA ####
 
 load("data objects/exvivo_lungs_mRNA_normcounts.RData")
@@ -727,6 +904,21 @@ ggroc(roc.obj, col="#507779", size=2, legacy.axes = TRUE)+
   geom_segment(aes(x = 0, xend = 1, y = 0, yend = 1),
                color = "darkgrey", 
                linetype = "dashed")
+dev.off()
+
+
+### SUP: individual values
+
+samples %>% pivot_longer(cols = 4:9, values_to = "counts", names_to = "gene") %>% 
+  ggplot(aes(x = condition, y = counts))+
+  geom_violin(aes(fill = condition, alpha=0.5), col=NA)+
+  geom_jitter(aes(col = condition), width=0.15, size = 3)+
+  theme_bw(base_size = 24)+
+  theme(legend.position = "none", aspect.ratio = 1.618)+
+  scale_fill_manual(values = c("#ECC192","#507779" ))+
+  scale_color_manual(values = c("#ECC192","#507779" ))+
+  facet_wrap(~gene, scales = "free")
+ggsave("plots/SUP14_exvivo_gene_counts.pdf", useDingbats=FALSE)
 dev.off()
 
 

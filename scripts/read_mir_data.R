@@ -6,6 +6,10 @@ library(preprocessCore)
 library(oligo)
 library(MetaIntegrator)
 library(COCONUT)
+library(tidyverse)
+library(ggpubr)
+
+source("scripts/COCONUT_tester.R")
 
 # Read miRNA datasets ###############################
 
@@ -175,6 +179,16 @@ checkDataObject(mirMetaObj, "Meta", "Pre-Analysis")
 
 coconut_miRNA <- coconutMetaIntegrator(mirMetaObj) 
 coco_out_miRNA <- combineCOCOoutput(coconut_miRNA) 
+
+testplots <- COCONUT_tester(coconut_miRNA, mirMetaObj)
+pdf("plots/SUP1_COCONUT_mir.pdf",
+    paper = "a4r")
+ggarrange(testplots$raw_controls, testplots$raw_cases, testplots$COCONUT_controls, testplots$COCONUT_cases,
+          labels = c("Raw controls", "Raw cases", "Normalized controls", "Normalized cases"),
+          hjust = -1,
+          nrow = 2,
+          ncol = 2)
+dev.off()
 
 save(coconut_miRNA, file = "coconut_miRNA.RData")
 save(coco_out_miRNA, file = "coco_out_miRNA.RData")

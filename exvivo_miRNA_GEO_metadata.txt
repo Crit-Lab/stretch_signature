@@ -1,0 +1,7 @@
+"samples" "id" "condition"
+"BE01" 100 "CPAP"
+"BE11" 101 "CPAP"
+"BE25" 102 "VILI"
+"BE27" 103 "VILI"
+"BE29" 104 "CPAP"
+"BE31" 105 "VILI"

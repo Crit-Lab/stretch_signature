@@ -9,6 +9,10 @@ library(mgu74av2.db)
 library(rgu34a.db)
 library(MetaIntegrator)
 library(COCONUT)
+library(tidyverse)
+library(ggpubr)
+
+source("scripts/COCONUT_tester.R")
 
 # Load datasets from animal experiments ####
 
@@ -575,6 +579,16 @@ checkDataObject(MetaObj_validation_animal, "Meta", "Pre-Analysis")
 
 coconutRes_validation_animal <- coconutMetaIntegrator(MetaObj_validation_animal)
 coco_out_validation_animal <- combineCOCOoutput(coconutRes_validation_animal)
+
+testplots <- COCONUT_tester(coconutRes_validation_animal,MetaObj_validation_animal)
+pdf("plots/SUP4_COCONUT_validation_animal.pdf",
+    paper = "a4r")
+ggarrange(testplots$raw_controls, testplots$raw_cases, testplots$COCONUT_controls, testplots$COCONUT_cases,
+          labels = c("Raw controls", "Raw cases", "Normalized controls", "Normalized cases"),
+          hjust = -1,
+          nrow = 2,
+          ncol = 2)
+dev.off()
 
 
 save(coconutRes_validation_animal, file = "coconutRes_validation_animal.RData")

@@ -3,6 +3,10 @@ library(limma)
 library(MetaIntegrator)
 library(COCONUT)
 library(oligo)
+library(tidyverse)
+library(ggpubr)
+
+source("scripts/COCONUT_tester.R")
 
 # Read datasets with gene expression in stretched cells #############
 
@@ -210,6 +214,17 @@ checkDataObject(MetaObj_genes_cells, "Meta", "Pre-Analysis")
 
 coconut_genes_cells<-coconutMetaIntegrator(MetaObj_genes_cells)
 coco_out_genes_cells<-combineCOCOoutput(coconut_genes_cells)
+
+testplots <- COCONUT_tester(coconut_genes_cells, MetaObj_genes_cells)
+pdf("plots/SUP13_COCONUT_genes_cells.pdf",
+    paper = "a4r")
+ggarrange(testplots$raw_controls, testplots$raw_cases, testplots$COCONUT_controls, testplots$COCONUT_cases,
+          labels = c("Raw controls", "Raw cases", "Normalized controls", "Normalized cases"),
+          hjust = -1,
+          nrow = 2,
+          ncol = 2)
+dev.off()
+
 
 save(coconut_genes_cells, file = "coconut_genes_cells.RData")
 save(coco_out_genes_cells, file = "coco_out_genes_cells.RData")

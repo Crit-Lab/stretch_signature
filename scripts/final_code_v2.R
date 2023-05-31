@@ -399,13 +399,13 @@ cor.sp
 
 ### D: supplementary heatmap
 
-legend <- data.frame(file=colnames(coco_out_validation_animal$genes), stretch=coco_out_validation_animal$class.cntl0.dis1)
-annotation <- data.frame(stretch=as.factor(legend$stretch))
+legend <- data.frame(file=colnames(coco_out_validation_animal$genes), group=df$group)
+annotation <- data.frame(stretch=as.factor(legend$group))
 rownames(annotation) <- colnames(coco_out_validation_animal$genes)
 
 ann_colors <- list(stretch=c("0"="#ECC192", "1"="#507779"))
 
-pheatmap(sel.genes[,order(legend$stretch)],
+pheatmap(sel.genes[,order(legend$group)],
          color=viridis(n=25, option="E"),
          cellwidth = 15,
          cellheight = 15,
@@ -414,7 +414,7 @@ pheatmap(sel.genes[,order(legend$stretch)],
          cluster_cols = FALSE,
          #cutree_cols = 2,  #could be
          clustering_method = "complete",
-         labels_col = legend$stretch[order(legend$stretch)],
+         labels_col = legend$group[order(legend$group)],
          filename="plots/SUP5_all_animal_heatmap.pdf")
 dev.off()
 
@@ -423,15 +423,15 @@ dev.off()
 random_AUCs<-vector(mode="numeric", length=10000)
 
 for(i in 1:10000) {
-  all_animal_genes <- c(positive_genes_animal, negative_genes_animal)
+  all_animal_genes <- genes
   random.names <- sample(all_animal_genes, 144)
-  random.genes <- ifelse(random.names %in% positive_genes_animal, "UP", "DOWN")
+  random.genes <- sample(c("UP", "DOWN"), 144, replace = TRUE)
   names(random.genes) <- random.names
   
-  df <- data.frame(score = apply(data.frame(sel.genes[rownames(sel.genes) %in% names(random.genes)[random.genes == "UP"], ]),
+  df <- data.frame(score = apply(data.frame(genes[rownames(genes) %in% names(random.genes)[random.genes == "UP"], ]),
                                  MARGIN = 2,
                                  FUN = gm_mean) -
-                     apply(data.frame(sel.genes[rownames(sel.genes) %in% names(random.genes)[random.genes == "DOWN"], ]),
+                     apply(data.frame(genes[rownames(genes) %in% names(random.genes)[random.genes == "DOWN"], ]),
                            MARGIN = 2,
                            FUN = gm_mean),
                    condition = coco_out_validation_animal$pheno$stretch,
@@ -604,7 +604,7 @@ ann_colors<-c("0"="#ECC192", "1"="#507779")
 pheno %>% pivot_longer(cols = 7:12, names_to = "gene", values_to = "value") %>% 
   ggplot( aes(x = dataset, y = value, fill = as.factor(stretch), col = as.factor(stretch)))+
   geom_violin(aes(fill=as.factor(stretch), alpha=0.5), col=NA)+
-  geom_point(aes(col=as.factor(stretch)), position = position_jitterdodge())+
+  geom_point(aes(col=as.factor(stretch)), position = position_jitterdodge(), size = 0.5)+
   theme_bw(base_size = 10)+
   theme(legend.position = "none", aspect.ratio = 1/1.618,
         axis.text.x = element_text(angle = 45, hjust = 1))+
@@ -625,7 +625,7 @@ ann_colors<-c("0"="#ECC192", "1"="#507779")
 pheno %>% pivot_longer(cols = 6:11, names_to = "gene", values_to = "value") %>% 
   ggplot( aes(x = dataset, y = value, fill = as.factor(stretch), col = as.factor(stretch)))+
   geom_violin(aes(fill=as.factor(stretch), alpha=0.5), col=NA)+
-  geom_point(aes(col=as.factor(stretch)), position = position_jitterdodge())+
+  geom_point(aes(col=as.factor(stretch)), position = position_jitterdodge(), size = 0.5)+
   theme_bw(base_size = 10)+
   theme(legend.position = "none", aspect.ratio = 1/1.618,
         axis.text.x = element_text(angle = 45, hjust = 1))+
@@ -642,15 +642,15 @@ dev.off()
 random_AUCs<-vector(mode="numeric", length=10000)
 
 for(i in 1:10000) {
-  all_animal_genes <- c(positive_genes_animal, negative_genes_animal)
+  all_animal_genes <- genes
   random.names <- sample(all_animal_genes, 6)
-  random.genes <- ifelse(random.names %in% positive_genes_animal, "UP", "DOWN")
+  random.genes <- sample(c("UP", "DOWN"), 6, replace = TRUE)
   names(random.genes) <- random.names
   
-  df <- data.frame(score = apply(data.frame(sel.genes[rownames(sel.genes) %in% names(random.genes)[random.genes == "UP"], ]),
+  df <- data.frame(score = apply(data.frame(genes[rownames(genes) %in% names(random.genes)[random.genes == "UP"], ]),
                                  MARGIN = 2,
                                  FUN = gm_mean) -
-                     apply(data.frame(sel.genes[rownames(sel.genes) %in% names(random.genes)[random.genes == "DOWN"], ]),
+                     apply(data.frame(genes[rownames(genes) %in% names(random.genes)[random.genes == "DOWN"], ]),
                            MARGIN = 2,
                            FUN = gm_mean),
                    condition = coco_out_validation_animal$pheno$stretch,
@@ -852,7 +852,7 @@ samples %>% pivot_longer(cols = 5:10, values_to = "counts", names_to = "miR") %>
   ggplot(aes(x = condition, y = counts))+
   geom_violin(aes(fill = condition, alpha=0.5), col=NA)+
   geom_jitter(aes(col = condition), width=0.15, size = 3)+
-  theme_bw(base_size = 24)+
+  theme_bw(base_size = 10)+
   theme(legend.position = "none", aspect.ratio = 1.618)+
   scale_fill_manual(values = c("#ECC192","#507779" ))+
   scale_color_manual(values = c("#ECC192","#507779" ))+
@@ -913,7 +913,7 @@ samples %>% pivot_longer(cols = 4:9, values_to = "counts", names_to = "gene") %>
   ggplot(aes(x = condition, y = counts))+
   geom_violin(aes(fill = condition, alpha=0.5), col=NA)+
   geom_jitter(aes(col = condition), width=0.15, size = 3)+
-  theme_bw(base_size = 24)+
+  theme_bw(base_size = 10)+
   theme(legend.position = "none", aspect.ratio = 1.618)+
   scale_fill_manual(values = c("#ECC192","#507779" ))+
   scale_color_manual(values = c("#ECC192","#507779" ))+
@@ -988,6 +988,23 @@ ggroc(roc.curve, col="#507779", size=2, legacy.axes = TRUE)+
                linetype = "dashed")
 dev.off()
 
+
+### SUP: individual counts
+
+mirnas_abundance[!is.na(mirnas_abundance$strain),] %>% pivot_longer(cols = 10:15, names_to = "miR", values_to = "counts") %>% 
+  ggplot( aes(x=as.factor(vt), y=counts))+
+  geom_line(aes(group=Patient), linetype=2, col="gray")+
+  geom_point(aes(col=as.factor(vt)), size=3)+
+  theme_bw(base_size = 5)+
+  theme(legend.position = "none", aspect.ratio = 1.618, strip.background = element_blank())+
+  scale_fill_manual(values=colors_two)+
+  scale_color_manual(values=colors_two)+
+  scale_x_discrete(labels=c("3 ml/Kg", "6 ml/Kg"))+
+  labs(y="miRNA score", x=NULL)+
+  facet_grid(~(delta_strain<0))+
+  facet_wrap(~miR*(delta_strain<0), scales = "free")
+ggsave("plots/SUP15_BALF_miRNAs.pdf", useDingbats=FALSE)
+dev.off()
 
 ## miRNA signature in COVID19 patients ########################################
 

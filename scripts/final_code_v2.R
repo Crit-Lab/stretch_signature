@@ -456,11 +456,7 @@ ggplot(NULL, aes(x=random_AUCs))+
   labs(x="AUC w/ 144 random genes", y="Density")
 ggsave("plots/SUP7_random_144_signature.pdf", useDingbats=FALSE)
 sum(random_AUCs>0.9)/length(random_AUCs)
-# 0.0525
-sum(random_AUCs>0.95)/length(random_AUCs)
-# 2e-04
-sum(random_AUCs>0.878)/length(random_AUCs)
-# 0.3238
+# 0
 
 
 ## 4. greedy selection of genes ####
@@ -675,9 +671,8 @@ ggplot(NULL, aes(x=random_AUCs))+
   labs(x="AUC w/ 6 random genes", y="Density")
 ggsave("plots/SUP_random_greedy_signature.pdf", useDingbats=FALSE)
 sum(random_AUCs>0.97)/length(random_AUCs)
-# 0.0011
-sum(random_AUCs>0.95)/length(random_AUCs)
-# 0.0055
+# 0
+
 
 ### SUP: individual AUCs for each gene in the signature
 
